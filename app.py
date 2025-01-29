@@ -1,4 +1,3 @@
-
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
@@ -6,17 +5,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import plotly.express as px
 
-df=pd.read_csv('carbon.csv',header=0)
-
-
-
-# Data for the choropleth
-# df = pd.DataFrame({
-#     "country": ["Belgium", "Netherlands", "France"],
-#     "carbon-intensity": [120, 150, 90],
-#     "low-carbon": [45.0, 50.0, 70.0],
-#     "renewable": [30.0, 35.0, 50.0],
-# })
+df = pd.read_csv('carbon.csv', header=0)
 
 app = dash.Dash(__name__, external_stylesheets=[
     'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap'
@@ -26,58 +15,61 @@ app.title = "European Carbon Dashboard"
 
 # Define color scheme
 colors = {
-    'background': '#8B94A3',
+    'background': '#F0F2F6',
     'text': '#2c3e50',
-    'primary': '#06BA63',
-    'secondary': '#E8CE4D',
-    'accent': '#E8CE4D'
+    'primary': '#3498db',
+    'secondary': '#2ecc71',
+    'accent': '#e74c3c'
 }
 
 app.layout = html.Div([
+    # Header
     html.Div([
-        html.H1("European Carbon Intensity Dashboard", 
+        html.H1("European Carbon Dashboard", 
                 style={'color': colors['text'], 'textAlign': 'center', 'fontWeight': '700', 'fontSize': '2.5rem', 'marginBottom': '0.5rem'}),
-        html.P("Interactive visualization of carbon intensity, low-carbon, and renewable energy data across Europe.", 
+        html.P("Interactive visualization of carbon intensity and renewable energy data across Europe.", 
                style={'color': colors['text'], 'textAlign': 'center', 'fontWeight': '300', 'fontSize': '1.1rem', 'marginBottom': '1.5rem'}),
-    ], style={'backgroundColor': 'white', 'padding': '2rem', 'borderRadius': '10px', 'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)', 'margin': '2rem 0'}),
+    ], style={'backgroundColor': 'white', 'padding': '2rem', 'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)', 'marginBottom': '2rem'}),
     
+    # Main content
     html.Div([
+        # Choropleth map
         html.Div([
-            dcc.Graph(id='choropleth-map', config={'displayModeBar': False},
-                      style={'height': '60vh', 'width': '100%'})
-        ], style={'width': '60%', 'display': 'inline-block', 'verticalAlign': 'top'}),
+            dcc.Graph(id='choropleth-map', config={'displayModeBar': False, 'scrollZoom': False},
+                      style={'height': '60vh'})
+        ], style={'width': '100%', 'marginBottom': '2rem'}),
         
+        # Donut charts
         html.Div([
             html.Div([
-                dcc.Graph(id='low-carbon-donut', style={'height': '28vh'}),
-            ], style={'marginBottom': '2rem'}),
-            
+                dcc.Graph(id='low-carbon-donut', config={'displayModeBar': False, 'scrollZoom': False},
+                          style={'height': '40vh'})
+            ], style={'width': '48%', 'display': 'inline-block'}),
             html.Div([
-                dcc.Graph(id='renewable-donut', style={'height': '28vh'}),
-            ]),
-        ], style={'width': '38%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginLeft': '2%'}),
-    ], style={'backgroundColor': 'white', 'padding': '1.5rem', 'borderRadius': '10px', 'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'}),
-    
-    dcc.Interval(id='interval-component', interval=50, n_intervals=0),
-    dcc.Store(id='hover-store', data={'country': None, 'n_intervals': 0})
-], style={'backgroundColor': colors['background'], 'fontFamily': 'Roboto, sans-serif', 'padding': '2rem', 'maxWidth': '1400px', 'margin': '0 auto'})
+                dcc.Graph(id='renewable-donut', config={'displayModeBar': False, 'scrollZoom': False},
+                          style={'height': '40vh'})
+            ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'}),
+        ]),
+    ], style={'backgroundColor': 'white', 'padding': '2rem', 'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'}),
+    dcc.Store(id='initial-selection', data='Belgium'),
+    dcc.Store(id='hover-data')
+], style={'backgroundColor': colors['background'], 'fontFamily': 'Roboto, sans-serif', 'padding': '2rem'})
 
 @app.callback(
     Output('choropleth-map', 'figure'),
-    Input('choropleth-map', 'hoverData')
+    Output('hover-data', 'data'),
+    Input('choropleth-map', 'hoverData'),
+    Input('initial-selection', 'data')
 )
-def update_map(hover_data):
+def update_map(hover_data, initial_selection):
     fig = px.choropleth(
         df,
         locations="country",
         locationmode="country names",
         color="carbon-intensity",
         hover_data=["country", "low-carbon", "renewable", "carbon-intensity"],
-        color_continuous_scale=[
-            [0, 'darkgreen'], 
-            [1, 'lightgreen']
-        ],
-        title="Low Carbon Energy Percentage by Country",
+        color_continuous_scale=px.colors.sequential.Viridis,
+        title="Carbon Intensity Across Europe",
     )
 
     fig.update_layout(
@@ -101,87 +93,67 @@ def update_map(hover_data):
         ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=0, r=0, t=50, b=0)
-    ) 
-    fig.update_coloraxes(showscale=False)
+        margin=dict(l=0, r=0, t=50, b=0),
+        hovermode='closest'
+    )
 
-    return fig
+    if hover_data is None:
+        hover_data = {'points': [{'location': initial_selection}]}
 
-@app.callback(
-    Output('hover-store', 'data'),
-    Input('choropleth-map', 'hoverData'),
-    Input('interval-component', 'n_intervals'),
-    State('hover-store', 'data')
-)
-def update_hover_store(hover_data, n_intervals, store_data):
-    if hover_data:
-        country = hover_data['points'][0]['location']
-        if country != store_data['country']:
-            return {'country': country, 'n_intervals': 0}
-        else:
-            return {'country': country, 'n_intervals': store_data['n_intervals'] + 1}
-    return {'country': None, 'n_intervals': 0}
-
+    return fig, hover_data
 @app.callback(
     [Output('low-carbon-donut', 'figure'),
      Output('renewable-donut', 'figure')],
-    Input('hover-store', 'data')
+    Input('hover-data', 'data'),
+    Input('initial-selection', 'data')
 )
-def update_donut_charts(hover_store):
-    country = hover_store['country']
-    print(country)
-    if country==None:
-        country='Belgium'
-        n_intervals=20
-    else:
-        n_intervals = hover_store['n_intervals']
-    
-  
-    if country:
-        print("Intervals",n_intervals)
-        country_data = df[df['country'] == country].iloc[0]
-        print(country_data)
-        max_intervals = 20
-        progress = min(n_intervals / max_intervals, 1)
-        
-        carbon_progress = country_data['low-carbon'] * progress
-        renew_progress = country_data['renewable'] * progress
-        
-        low_carbon_fig = go.Figure(data=[go.Pie(
-            values=[carbon_progress, 100 - carbon_progress],
-            hole=0.7,
-            textinfo='none',
-            marker_colors=[colors['primary'], '#e0e0e0'],
-            showlegend=False
-        )])
-        low_carbon_fig.update_layout(
-            annotations=[dict(text=f'{carbon_progress:.1f}%', x=0.5, y=0.5, font_size=24, showarrow=False, font_family="Roboto", font_color=colors['primary'])],
-            showlegend=False,
-            title=dict(text=f"Low Carbon Energy in {country}", font=dict(size=18, family="Roboto", color=colors['text']), x=0.5, xanchor='center'),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=30, b=0, l=0, r=0)
-        )
-        
-        renewable_fig = go.Figure(data=[go.Pie(
-            values=[renew_progress, 100 - renew_progress],
-            hole=0.7,
-            textinfo='none',
-            marker_colors=[colors['secondary'], '#e0e0e0'],
-            showlegend=False
-        )])
-        renewable_fig.update_layout(
-            annotations=[dict(text=f'{renew_progress:.1f}%', x=0.5, y=0.5, font_size=24, showarrow=False, font_family="Roboto", font_color=colors['secondary'])],
-            showlegend=False,
-            title=dict(text=f"Renewable Energy in {country}", font=dict(size=18, family="Roboto", color=colors['text']), x=0.5, xanchor='center'),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=30, b=0, l=0, r=0)
-        )
-        
-        return low_carbon_fig, renewable_fig
+def update_donut_charts(hover_data, initial_selection):
+    ctx = dash.callback_context
+    trigger = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    return go.Figure(), go.Figure()
+    if trigger == 'initial-selection' or not hover_data:
+        country = initial_selection
+    elif hover_data and 'points' in hover_data:
+        country = hover_data['points'][0]['location']
+    else:
+        return go.Figure(), go.Figure()
+
+    country_data = df[df['country'] == country].iloc[0]
+    
+    low_carbon_fig = go.Figure(data=[go.Pie(
+        values=[country_data['low-carbon'], 100 - country_data['low-carbon']],
+        hole=0.7,
+        textinfo='none',
+        marker_colors=[colors['primary'], '#e0e0e0'],
+        showlegend=False
+    )])
+    low_carbon_fig.update_layout(
+        annotations=[dict(text=f'{country_data["low-carbon"]:.1f}%', x=0.5, y=0.5, font_size=24, showarrow=False, font_family="Roboto", font_color=colors['primary'])],
+        showlegend=False,
+        title=dict(text=f"Low Carbon Energy in {country}", font=dict(size=18, family="Roboto", color=colors['text']), x=0.5, xanchor='center'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=30, b=0, l=0, r=0)
+    )
+    
+    renewable_fig = go.Figure(data=[go.Pie(
+        values=[country_data['renewable'], 100 - country_data['renewable']],
+        hole=0.7,
+        textinfo='none',
+        marker_colors=[colors['secondary'], '#e0e0e0'],
+        showlegend=False
+    )])
+    renewable_fig.update_layout(
+        annotations=[dict(text=f'{country_data["renewable"]:.1f}%', x=0.5, y=0.5, font_size=24, showarrow=False, font_family="Roboto", font_color=colors['secondary'])],
+        showlegend=False,
+        title=dict(text=f"Renewable Energy in {country}", font=dict(size=18, family="Roboto", color=colors['text']), x=0.5, xanchor='center'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=30, b=0, l=0, r=0)
+    )
+    
+    return low_carbon_fig, renewable_fig
 
 if __name__ == '__main__':
     app.run_server('0.0.0.0',port=8050)
+
