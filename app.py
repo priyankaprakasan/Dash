@@ -184,4 +184,4 @@ def update_donut_charts(hover_store):
     return go.Figure(), go.Figure()
 
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8050)
+    app.run_server('0.0.0.0',port=8050)
