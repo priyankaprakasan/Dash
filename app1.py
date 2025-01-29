@@ -13,12 +13,13 @@ app = dash.Dash(__name__, external_stylesheets=[
 
 app.title = "European Carbon Dashboard"
 
+# Define color scheme
 colors = {
-    'background': '#8B94A3',
+    'background': '#F0F2F6',
     'text': '#2c3e50',
-    'primary': '#06BA63',
-    'secondary': '#E8CE4D',
-    'accent': '#E8CE4D'
+    'primary': '#3498db',
+    'secondary': '#2ecc71',
+    'accent': '#e74c3c'
 }
 
 app.layout = html.Div([
@@ -28,29 +29,28 @@ app.layout = html.Div([
                 style={'color': colors['text'], 'textAlign': 'center', 'fontWeight': '700', 'fontSize': '2.5rem', 'marginBottom': '0.5rem'}),
         html.P("Interactive visualization of carbon intensity and renewable energy data across Europe.", 
                style={'color': colors['text'], 'textAlign': 'center', 'fontWeight': '300', 'fontSize': '1.1rem', 'marginBottom': '1.5rem'}),
-    ], style={'backgroundColor': 'white', 'padding': '2rem', 'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)', 'marginBottom': '2rem','border-radius':'20px'}),
+    ], style={'backgroundColor': 'white', 'padding': '2rem', 'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)', 'marginBottom': '2rem'}),
     
     # Main content
     html.Div([
         # Choropleth map
         html.Div([
             dcc.Graph(id='choropleth-map', config={'displayModeBar': False, 'scrollZoom': False},
-                      style={'height': '80vh'})
-        ], style={'width': '65%', 'display': 'inline-block', 'verticalAlign': 'top','border-radius':'20px'}),
+                      style={'height': '60vh'})
+        ], style={'width': '100%', 'marginBottom': '2rem'}),
         
         # Donut charts
         html.Div([
             html.Div([
                 dcc.Graph(id='low-carbon-donut', config={'displayModeBar': False, 'scrollZoom': False},
-                          style={'height': '38vh'})
-            ], style={'marginBottom': '2rem'}),
+                          style={'height': '40vh'})
+            ], style={'width': '48%', 'display': 'inline-block'}),
             html.Div([
                 dcc.Graph(id='renewable-donut', config={'displayModeBar': False, 'scrollZoom': False},
-                          style={'height': '38vh'})
-            ]),
-        ], style={'width': '33%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginLeft': '2%','margin-top': '1%'}),
-    ], style={'backgroundColor': 'white', 'padding': '20px', 'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)','border-radius':'20px','margin-top':'20px !important'}),
-    
+                          style={'height': '40vh'})
+            ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'}),
+        ]),
+    ], style={'backgroundColor': 'white', 'padding': '2rem', 'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'}),
     dcc.Store(id='initial-selection', data='Belgium'),
     dcc.Store(id='hover-data')
 ], style={'backgroundColor': colors['background'], 'fontFamily': 'Roboto, sans-serif', 'padding': '2rem'})
