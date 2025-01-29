@@ -18,7 +18,7 @@ colors = {
     'text': '#2c3e50',
     'primary': '#06BA63',
     'secondary': '#E8CE4D',
-    'accent': '#34a0a4'
+    'accent': '#E8CE4D'
 }
 
 app.layout = html.Div([
@@ -68,7 +68,7 @@ def update_map(hover_data, initial_selection):
         locationmode="country names",
         color="carbon-intensity",
         hover_data=["country", "low-carbon", "renewable", "carbon-intensity"],
-        color_continuous_scale=[(0, 'darkgreen'), (1, 'lightgreen')],
+        color_continuous_scale=px.colors.sequential.Viridis,
         title="Carbon Intensity Across Europe",
     )
 
@@ -91,16 +91,11 @@ def update_map(hover_data, initial_selection):
             x=0.5,
             xanchor='center'
         ),
-        coloraxis_colorbar=dict(
-        title=None, # This removes the title/label from the colorbar
-        ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         margin=dict(l=0, r=0, t=50, b=0),
         hovermode='closest'
     )
-   
-   
 
     if hover_data is None:
         hover_data = {'points': [{'location': initial_selection}]}
@@ -129,11 +124,11 @@ def update_donut_charts(hover_data, initial_selection):
         values=[country_data['low-carbon'], 100 - country_data['low-carbon']],
         hole=0.7,
         textinfo='none',
-        marker_colors=[colors['accent'], '#e0e0e0'],
+        marker_colors=[colors['primary'], '#e0e0e0'],
         showlegend=False
     )])
     low_carbon_fig.update_layout(
-        annotations=[dict(text=f'{country_data["low-carbon"]:.1f}%', x=0.5, y=0.5, font_size=24, showarrow=False, font_family="Roboto", font_color=colors['accent'])],
+        annotations=[dict(text=f'{country_data["low-carbon"]:.1f}%', x=0.5, y=0.5, font_size=24, showarrow=False, font_family="Roboto", font_color=colors['primary'])],
         showlegend=False,
         title=dict(text=f"Low Carbon Energy in {country}", font=dict(size=18, family="Roboto", color=colors['text']), x=0.5, xanchor='center'),
         paper_bgcolor='rgba(0,0,0,0)',
